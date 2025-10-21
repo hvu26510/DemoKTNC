@@ -8,10 +8,10 @@ namespace DemoKTNC
 {
     public class TinhToan
     {
-        public bool LaSoChan(int n)
-        {
-            return n % 2 == 0;
+        public bool LaSoChan(int n) => n % 2 == 0;
+        //{
+        //    return n % 2 == 0;
 
-        }
+        //}
     }
 }
