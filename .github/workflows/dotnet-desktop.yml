@@ -1,10 +1,9 @@
 name: .NET CI
 
 on:
-  push:
-    branches: [ "main" ]   # đổi sang "master" nếu repo bạn dùng master
-  pull_request:
-    branches: [ "main" ]
+  push:                # Tự chạy khi có push
+  pull_request:        # Tự chạy khi có PR
+  workflow_dispatch:   # 👈 Thêm dòng này để bật nút "Run workflow"
 
 jobs:
   build-test:
