@@ -75,88 +75,72 @@ class Program
         TryClosePopups(driver);
 
         // Nút "Thêm vào giỏ" – dò theo text/thuộc tính phổ biến
-        By addToCartBy = By.XPath("//button[(contains(.,'Thêm vào giỏ') or contains(.,'Thêm vào giỏ hàng') or @name='add-to-cart' or @data-action='add-to-cart')]");
+        By addToCartBy = By.XPath("//button[(contains(.,'Thêm vào giỏ'))]");
         var addToCartBtn = driver.SafeClickable(addToCartBy, 12);
         driver.ScrollIntoViewAndClick(addToCartBtn);
 
         // Mở giỏ/checkout để xác nhận
         driver.Navigate().GoToUrl("https://www.savor.vn/checkout");
         var pageText = driver.PageSource;
-        Console.WriteLine(pageText.Contains("Giỏ hàng trống")
-            ? "Giỏ hiện trống (có thể cần thử sản phẩm khác / selector khác)."
-            : "Đã thêm sản phẩm và mở trang checkout.");
     }
 
     // ============================
     // HÀM 2: ĐẶT 1 CHIẾC BÁNH HỎA TỐC
     // ============================
-    static void DatHang(IWebDriver driver)
+
+    static void DatHang(IWebDriver d)
     {
-        // Vào thẳng trang checkout
-        driver.Navigate().GoToUrl("https://www.savor.vn/checkout");
-        TryClosePopups(driver);
+        d.Navigate().GoToUrl("https://www.savor.vn/checkout");
+        TryClosePopups(d);
 
-        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(15));
+        var w = new WebDriverWait(d, TimeSpan.FromSeconds(15));
+        var js = (IJavaScriptExecutor)d;
+        var ac = new OpenQA.Selenium.Interactions.Actions(d);
 
-        // 1) Điền thông tin người đặt
-        var hoTenDat = wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector("input[name='orderCustomer.name']")));
-        ((IJavaScriptExecutor)driver).ExecuteScript("arguments[0].scrollIntoView({block:'center'});", hoTenDat);
-        hoTenDat.Clear(); hoTenDat.SendKeys("Nguyen Van A");
+        // 1. Họ tên + SĐT
+        w.Until(ExpectedConditions.ElementIsVisible(By.CssSelector("input[name='orderCustomer.name']")))
+         .SendKeys("Nguyen Van A");
+        w.Until(ExpectedConditions.ElementIsVisible(By.CssSelector("input[name='orderCustomer.cellphone']")))
+         .SendKeys("0912345678");
 
-        var sdtDat = wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector("input[name='orderCustomer.cellphone']")));
-        sdtDat.Clear(); sdtDat.SendKeys("0912345678");
-
-        // 2) Tick “Giống người đặt hàng”
-        var giongNguoiDat = wait.Until(ExpectedConditions.ElementToBeClickable(
-            By.XPath("//label[normalize-space()='Giống người đặt hàng']/ancestor::div[contains(@class,'leading-none')]/preceding-sibling::button[@role='checkbox']")));
-        driver.ScrollIntoViewAndClick(giongNguoiDat);
-
-        // 3) Tick “Lấy tại cửa hàng”
-        var layTaiCuaHang = wait.Until(ExpectedConditions.ElementToBeClickable(
-            By.XPath("//label[normalize-space()='Lấy tại cửa hàng']/ancestor::div[contains(@class,'leading-none')]/preceding-sibling::button[@role='checkbox']")));
-        driver.ScrollIntoViewAndClick(layTaiCuaHang);
-
-        // 4) Mở combobox “Cửa hàng”
-        var chonCuaHangBtn = wait.Until(ExpectedConditions.ElementToBeClickable(
-            By.XPath("//label[contains(.,'Cửa hàng')]/following::button[@role='combobox'][1]")));
-        driver.ScrollIntoViewAndClick(chonCuaHangBtn);
-
-        // 5) Khi danh sách mở ra, chọn cơ sở đầu tiên (ArrowDown + Enter)
-        var actions = new OpenQA.Selenium.Interactions.Actions(driver);
-        actions.SendKeys(Keys.ArrowDown).SendKeys(Keys.Enter).Perform();
-
-        // 6) (Tùy chọn) Ghi chú đơn hàng
+        // Helper: tick checkbox theo text
+        void Check(string text)
+        {
+            var e = w.Until(ExpectedConditions.ElementToBeClickable(
+                By.XPath($"//label[normalize-space()='{text}']/ancestor::div[contains(@class,'leading-none')]/preceding-sibling::button[@role='checkbox']")));
+            js.ExecuteScript("arguments[0].scrollIntoView({block:'center'});", e);
+            e.Click();
+        }
+        Check("Giống người đặt hàng");
+        Check("Lấy tại cửa hàng");
+        // Helper: mở combobox + chọn item đầu tiên
+        void Combo(By by)
+        {
+            var b = w.Until(ExpectedConditions.ElementToBeClickable(by));
+            js.ExecuteScript("arguments[0].scrollIntoView({block:'center'});", b);
+            b.Click();
+            ac.SendKeys(Keys.ArrowDown).SendKeys(Keys.Enter).Perform();
+        }
+        // 2. Chọn cửa hàng
+        Combo(By.XPath("//label[contains(.,'Cửa hàng')]/following::button[@role='combobox'][1]"));
+        // 3. Optional: ghi chú + giờ nhận
         try
         {
-            var ghiChu = wait.Until(ExpectedConditions.ElementIsVisible(By.CssSelector("input[name='orderNote']")));
-            ghiChu.Clear(); ghiChu.SendKeys("Lấy tại cửa hàng chi nhánh đầu tiên, cảm ơn ạ!");
-        }
-        catch { /* optional */ }
+            w.Until(ExpectedConditions.ElementIsVisible(
+                By.CssSelector("input[name='orderNote']")))
+             .SendKeys("Lấy tại cửa hàng chi nhánh đầu tiên, cảm ơn ạ!");
 
-        // 7) (Tuỳ chọn) Chọn “Giờ nhận” (nếu form yêu cầu)
-        try
-        {
-            var gioNhanBtn = wait.Until(ExpectedConditions.ElementToBeClickable(
-                By.XPath("//label[contains(normalize-space(),'Giờ nhận')]/following::button[@role='combobox'][1]")));
-            driver.ScrollIntoViewAndClick(gioNhanBtn);
-            actions.SendKeys(Keys.ArrowDown).SendKeys(Keys.Enter).Perform();
+            Combo(By.XPath("//label[contains(normalize-space(),'Giờ nhận')]/following::button[@role='combobox'][1]"));
         }
-        catch { /* bỏ qua nếu không bắt buộc */ }
-
-        // 8) Bấm nút “Đặt hàng”
-        var datHangBtn = wait.Until(ExpectedConditions.ElementToBeClickable(
+        catch { }
+        // 4. Đặt hàng
+        var submit = w.Until(ExpectedConditions.ElementToBeClickable(
             By.XPath("//button[@type='submit' and contains(.,'Đặt hàng')]")));
-        driver.ScrollIntoViewAndClick(datHangBtn);
+        js.ExecuteScript("arguments[0].scrollIntoView({block:'center'});", submit);
+        submit.Click();
 
-        Console.WriteLine("Đã bấm 'Đặt hàng' với hình thức nhận tại cửa hàng.");
+        Console.WriteLine("Đã bấm 'Đặt hàng'.");
     }
-
-
-
-
-
-
-    // Đóng popup/cookie/banner nếu có
     static void TryClosePopups(IWebDriver driver)
     {
         try
