@@ -1,7 +1,8 @@
 ﻿using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
-using SeleniumExtras.WaitHelpers; // <-- cần gói DotNetSeleniumExtras.WaitHelpers
+using SeleniumExtras.WaitHelpers; 
+// <-- cần gói DotNetSeleniumExtras.WaitHelpers
 using System;
 
 static class DomHelpers
